@@ -1,0 +1,27 @@
+{
+  "name": "desca",
+  "version": "1.0.0",
+  "description": "Decentralized SCADA on Solidity",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shreaderdog/DeSca.git"
+  },
+  "keywords": [
+    "solidity",
+    "blockchain",
+    "SCADA"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Shreaderdog/DeSca/issues"
+  },
+  "homepage": "https://github.com/Shreaderdog/DeSca#readme",
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.5.0",
+    "truffle-flattener": "^1.6.0"
+  },
+  "dependencies": {
+    "truffle": "^5.5.3"
+  }
+}
