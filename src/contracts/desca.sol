@@ -44,4 +44,15 @@ contract DeSCA is AccessControl {
             totalNodes += 1;
         }
     }
+
+    function removenode(address _nodeaddress) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        uint256 i;
+        for(i = 0; i < nodeList.length; i++) {
+            if(nodeList[i].nodeAddress == _nodeaddress) {
+                nodeList[i] = nodeList[nodeList.length - 1];  // move last element to empty space
+                delete nodeList[nodeList.length - 1];  // remove empty space where last element was
+            }
+        }
+    }
 }
