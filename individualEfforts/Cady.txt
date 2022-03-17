@@ -1,0 +1,12 @@
+Pseudocode for Drone
+
+If wind is above 15 mph 
+	Do NOT fly 
+If wind is less than 15
+	Do fly
+If temperature is above 90 degree F
+	Do NOT fly
+If air pressure is below 28 in
+	Do NOT fly as air pressure is too low and cause problems to drone
+If raining 
+	Don’t fly 
