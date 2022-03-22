@@ -25,6 +25,7 @@ contract DeSCA is AccessControl {
     uint256 public nodeTimeout; // number of times node can not send data before being skipped
     bool public flightflag; // flag for sending drone out
     node[] public nodeList; // holds all nodes
+    mapping(address => uint256) nodeIndex;
     
 
     constructor(uint256 _targetpercent, uint256 _timeout) {
@@ -40,6 +41,7 @@ contract DeSCA is AccessControl {
         if(functionalNodes < totalNodes) {
             nodeList.push(node({nodeAddress: _nodeaddress, nodeData: 0, noDataTimer: 0, dataReceived: false}));
             grantRole(DATA_SENDER_ROLE, _nodeaddress);
+            nodeIndex[_nodeaddress] = totalNodes;
             functionalNodes += 1;
             totalNodes += 1;
         }
@@ -52,7 +54,15 @@ contract DeSCA is AccessControl {
             if(nodeList[i].nodeAddress == _nodeaddress) {
                 nodeList[i] = nodeList[nodeList.length - 1];  // move last element to empty space
                 delete nodeList[nodeList.length - 1];  // remove empty space where last element was
+                functionalNodes -= 1;
             }
         }
+    }
+
+    function reportdata(int256 _sensordata) public {
+        require(hasRole(DATA_SENDER_ROLE, msg.sender));
+        nodeList[nodeIndex[msg.sender]].nodeData = _sensordata;
+        nodeList[nodeIndex[msg.sender]].noDataTimer = 0;
+        nodeList[nodeIndex[msg.sender]].dataReceived = true;
     }
 }
