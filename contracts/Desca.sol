@@ -12,11 +12,11 @@ contract DeSCA is AccessControl {
     
     struct node {
         address nodeAddress; // blockchain address of node
-        int256 numSensors; // number of sensors associated with this node
+        uint256 numSensors; // number of sensors associated with this node
         int256[] sensordata; // data from each sensor of node
-        int256[] noDataTimer; // count of cycles since data was last received from sensor
-        bool[] dataRecieved; // tracks whether data was received this cycle
+        uint256[] noDataTimer; // count of cycles since data was last received from sensor
         bool[] ignore; // shows whether sensor can be ignored for final decision
+        bool[] recd; // tracks whether data was received this cycle
     }
 
     uint256 public totalNodes; // number of nodes on network
@@ -43,19 +43,24 @@ contract DeSCA is AccessControl {
 
     function removeAdmin(address _adminAccount) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        revokeRole(NET_ADMIN_ROLE, msg.sender);
+        revokeRole(NET_ADMIN_ROLE, _adminAccount);
     }
 
     function addNode(address _nodeaddress) public {
         require(hasRole(NET_ADMIN_ROLE, msg.sender));
         grantRole(DATA_SENDER_ROLE, msg.sender);
         totalNodes += 1;
-        nodeList.push(node({nodeAddress: _nodeaddress, numSensors: 0}));
+        node memory s = node(_nodeaddress, 0, new int256[](0), new uint256[](0),  new bool[](0),  new bool[](0) );
+        nodeList.push(s);
     }
 
     function removeNode(address _nodeaddress) public {
         require(hasRole(NET_ADMIN_ROLE, msg.sender));
-        revokeRole(DATA_SENDER_ROLE, msg.sender);   
+        revokeRole(DATA_SENDER_ROLE, _nodeaddress);   
+    }
+
+    function getNode(address _nodeaddress) internal view returns (node memory){
+        return nodeList[nodeIndex[_nodeaddress]];
     }
 
     function reportData(int256[] calldata _sensordata) external {
@@ -80,10 +85,10 @@ contract DeSCA is AccessControl {
                 }
 
                 if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].dataReceived.push(false);
+                    nodeList[nodeIndex[msg.sender]].recd.push(false);
                 }
                 else {
-                    nodeList[nodeIndex[msg.sender]].dataReceived[i] = false;
+                    nodeList[nodeIndex[msg.sender]].recd[i] = false;
                 }
             }
             else {
@@ -95,10 +100,10 @@ contract DeSCA is AccessControl {
                 }
                 
                 if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].dataReceived.push(true);
+                    nodeList[nodeIndex[msg.sender]].recd.push(true);
                 }
                 else {
-                    nodeList[nodeIndex[msg.sender]].dataReceived[i] = true;
+                    nodeList[nodeIndex[msg.sender]].recd[i] = true;
                 }
 
                 if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
@@ -114,18 +119,23 @@ contract DeSCA is AccessControl {
             }
             
             bool good = true;
-            for(uint i = 0; i < nodeList.length; i++) {
-                for(uint j = 0; i < nodeList[i].numSensors; i++) {
-                    if(nodeList[i].dataReceived[j] == false && nodeList[i].ignore[j] == false) {
+            uint gooddata = 0;
+            for(uint j = 0; j < nodeList.length; j++) {
+                for(uint k = 0; k < nodeList[j].numSensors; k++) {
+                    if(nodeList[j].recd[k] == false && nodeList[j].ignore[k] == false) {
                         good = false;
                     }
-                    else if(nodeList[i].sensordata[j] > 8000 || nodeList[i].sensordata[j] < 4000) {
-                        good = false;
+                    else if(nodeList[j].sensordata[k] < 8000 && nodeList[j].sensordata[k] > 4000) {
+                        gooddata += 1;
                     }
                 }
                 if(good == false) {
                     break;
                 }
+            }
+
+            if((gooddata*100)/totalSensors < targetPercentage) {
+                good = false;
             }
 
             if(good) {
