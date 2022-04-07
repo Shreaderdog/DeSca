@@ -8,7 +8,7 @@ BUFFER_SIZE = 1024
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))
 print("connected: ", s)
-data = s.recv(BUFFER_SIZE)        # Receives data from the sensor.
+data = s.recv(BUFFER_SIZE) * 100        # Receives data from the sensor.
 sensorData = [data]
 s.close()
 print("received data: ", sensorData)
