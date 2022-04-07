@@ -536,85 +536,61 @@ contract DeSCA is AccessControl {
 
     function reportData(int256[] calldata _sensordata) external {
         require(hasRole(DATA_SENDER_ROLE, msg.sender));
-        if(nodeList[nodeIndex[msg.sender]].numSensors < _sensordata.length) {
-            nodeList[nodeIndex[msg.sender]].numSensors = _sensordata.length;
+
+        node memory cnodeorig = nodeList[nodeIndex[msg.sender]];
+        node memory currnode = node(cnodeorig.nodeAddress, _sensordata.length, _sensordata, new uint256[](_sensordata.length),  new bool[](_sensordata.length),  new bool[](_sensordata.length) );
+
+        for(uint i = 0; i < cnodeorig.noDataTimer.length; i++) {
+            
+            currnode.noDataTimer[i] = cnodeorig.noDataTimer[i];
         }
+
         for (uint i = 0; i < _sensordata.length; i++) {
-            if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                nodeList[nodeIndex[msg.sender]].sensordata.push(_sensordata[i]);
-            }
-            else {
-                nodeList[nodeIndex[msg.sender]].sensordata[i] = _sensordata[i];
-            }
 
             if(_sensordata[i] == -100000) {
-                if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].noDataTimer.push(1);
-                }
-                else {
-                    nodeList[nodeIndex[msg.sender]].noDataTimer[i] += 1;
-                }
-
-                if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].recd.push(false);
-                }
-                else {
-                    nodeList[nodeIndex[msg.sender]].recd[i] = false;
-                }
+                currnode.noDataTimer[i] += 1;
+                currnode.recd[i] = false;
             }
             else {
-                if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].noDataTimer.push(0);
-                }
-                else {
-                    nodeList[nodeIndex[msg.sender]].noDataTimer[i] = 0;
-                }
-
-                if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].recd.push(true);
-                }
-                else {
-                    nodeList[nodeIndex[msg.sender]].recd[i] = true;
-                }
-
-                if(i == nodeList[nodeIndex[msg.sender]].sensordata.length) {
-                    nodeList[nodeIndex[msg.sender]].ignore.push(false);
-                }
-                else {
-                    nodeList[nodeIndex[msg.sender]].ignore[i] = false;
-                }
+                currnode.noDataTimer[i] = 0;
+                currnode.recd[i] = true;
+                currnode.ignore[i] = false;
             }
 
-            if(nodeList[nodeIndex[msg.sender]].noDataTimer[i] >= sensorTimeout) {
-                nodeList[nodeIndex[msg.sender]].ignore[i] = true;
+            if(currnode.noDataTimer[i] >= sensorTimeout) {
+                currnode.ignore[i] = true;
             }
 
-            bool good = true;
-            uint gooddata = 0;
-            for(uint j = 0; j < nodeList.length; j++) {
-                for(uint k = 0; k < nodeList[j].numSensors; k++) {
-                    if(nodeList[j].recd[k] == false && nodeList[j].ignore[k] == false) {
-                        good = false;
-                    }
-                    else if(nodeList[j].sensordata[k] < 8000 && nodeList[j].sensordata[k] > 4000) {
-                        gooddata += 1;
-                    }
+            uint index = nodeIndex[msg.sender];
+            nodeList[index] = currnode;
+        }
+        bool good = true;
+        uint gooddata = 0;
+        totalSensors = 0;
+        for(uint j = 0; j < nodeList.length; j++) {
+            totalSensors += nodeList[j].numSensors;
+            for(uint k = 0; k < nodeList[j].numSensors; k++) {
+                if(nodeList[j].recd[k] == false && nodeList[j].ignore[k] == false) {
+                    good = false;
                 }
-                if(good == false) {
-                    break;
+                else if(nodeList[j].sensordata[k] < 8000 && nodeList[j].sensordata[k] > 4000) {
+                    gooddata += 1;
                 }
             }
+            if(good == false) {
+                break;
+            }
+        }
 
-            if((gooddata*100)/totalSensors < targetPercentage) {
-                good = false;
-            }
+        if((gooddata*100)/totalSensors < targetPercentage) {
+            good = false;
+        }
 
-            if(good) {
-                flightflag = true;
-            }
-            else {
-                flightflag = false;
-            }
+        if(good) {
+            flightflag = true;
+        }
+        else {
+            flightflag = false;
         }
     }
 }
