@@ -22,6 +22,9 @@
     "truffle-flattener": "^1.6.0"
   },
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-preset": "^1.1.7",
+    "babel-register": "^6.26.0",
     "truffle": "^5.5.3"
   }
 }
