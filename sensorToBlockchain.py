@@ -1,6 +1,5 @@
 import socket
 from web3 import Web3
-from solc import compile_source
 
 TCP_IP = "192.168.1.103"        # IP where the sensor is sending data.
 TCP_PORT = 1025
