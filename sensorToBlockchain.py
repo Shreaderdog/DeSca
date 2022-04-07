@@ -15,6 +15,7 @@ print("received data: ", sensorData)
 
 localhost = 'http://127.0.0.1:8545'     # Location where you are running local blockchain testnet via Geth.
 w3 = Web3(Web3.HTTPProvider(localhost))
+w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 deployAddress = '0xCf7f5ee8918844c7b95d4b981f3536c806a1e222'        # Address where contract is deployed.
 nodeAddress = '0x301DA4b6A10Fe3BC96d0f60cE306775532b4b2cd'      # Address of admin/node
 
