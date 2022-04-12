@@ -1,12 +1,23 @@
 {
 	"compiler": {
-		"version": "0.8.13+commit.abaa5c0e"
+		"version": "0.8.7+commit.e28d00a7"
 	},
 	"language": "Solidity",
 	"output": {
 		"abi": [
 			{
-				"inputs": [],
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "admin_address",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_expected_voters",
+						"type": "uint256"
+					}
+				],
 				"stateMutability": "nonpayable",
 				"type": "constructor"
 			},
@@ -206,8 +217,14 @@
 			{
 				"inputs": [],
 				"name": "reset",
-				"outputs": [],
-				"stateMutability": "nonpayable",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -361,11 +378,11 @@
 			]
 		},
 		"src/contracts/Desca.sol": {
-			"keccak256": "0xdfd8847b286251906364bacf9f758f1a34677682a870a2b6eec7d75305923928",
+			"keccak256": "0x62d6042f608ffd0058de27898e36e4b4dba4ae05c390b18210d297f7fae3dbf9",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://97f3d454bae951423abd44516d4cf0987445e339ba07b7f571621898793078f5",
-				"dweb:/ipfs/QmVsSyGccWH7JDabWrKiet5xi6QpaWY9QYrJ29Sf9AwoE1"
+				"bzz-raw://72c5e8050df9746d3382229a5d794a34ceae714bcf9e44823c56581c6d274cc2",
+				"dweb:/ipfs/QmTK5bEmmNcMjTSghA5JsBonMZf734cf9PcPvTRJAuyiBM"
 			]
 		}
 	},

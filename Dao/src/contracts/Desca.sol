@@ -20,14 +20,16 @@ contract DeSCA is AccessControl {
     enum VoterValue { NOT_VALID, NOT_VOTED, YES, NO }
 
     uint num_voters;
+    uint expected_voters;
     uint num_yes;
     uint num_no;
     mapping (address => VoterValue) voter_votes;
 
-    constructor (address admin) {
-        _setupRole(DEFAULT_ADMIN_ROLE, admin);
+    constructor (address admin_address, uint _expected_voters) {
+        _setupRole(DEFAULT_ADMIN_ROLE, admin_address);
 
         num_voters = 0;
+        expected_voters = _expected_voters;
         num_yes = 0;
         num_no = 0;
     }
@@ -68,15 +70,15 @@ contract DeSCA is AccessControl {
     }
 
     function reset() public view returns (address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        // require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
 
-        num_voters = 0;
-        num_yes = 0;
-        num_no = 0;
+        // num_voters = 0;
+        // num_yes = 0;
+        // num_no = 0;
 
-        for (uint i = 0; i < num_voters; i++) {
-            return voter_votes[i];
-        }
+        // for (uint i = 0; i < num_voters; i++) {
+        //     return voter_votes[i];
+        // }
     }
 
     // function print() public view returns (bool) {
