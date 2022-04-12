@@ -1,5 +1,6 @@
 /node_modules
-/src/abis
+/src/client/node_modules
+/src/client/contracts
 npm-debug.log*
 /.pnp
 .pnp.js
