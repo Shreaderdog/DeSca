@@ -1,11 +1,11 @@
 import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
-import getWeb3 from "./getWeb3";
+import DeSCA from "./contracts/DeSCA.json";
+import getWeb3 from "./components/getWeb3";
 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { numsensors: 0, web3: null, accounts: null, contract: null };
 
   componentDidMount = async () => {
     try {
@@ -19,7 +19,7 @@ class App extends Component {
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = SimpleStorageContract.networks[networkId];
       const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
+        DeSCA.abi,
         deployedNetwork && deployedNetwork.address,
       );
 
@@ -38,14 +38,12 @@ class App extends Component {
   runExample = async () => {
     const { accounts, contract } = this.state;
 
-    // Stores a given value, 5 by default.
-    await contract.methods.set(5).send({ from: accounts[0] });
+    // get numer of sensors
+    const response = await contract.methods.totalsensors.call();
 
-    // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
 
     // Update state with the result.
-    this.setState({ storageValue: response });
+    this.setState({ numsensors: response });
   };
 
   render() {
@@ -64,7 +62,7 @@ class App extends Component {
         <p>
           Try changing the value stored on <strong>line 42</strong> of App.js.
         </p>
-        <div>The stored value is: {this.state.storageValue}</div>
+        <div>The stored value is: {this.state.numsensors}</div>
       </div>
     );
   }
