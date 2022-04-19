@@ -17,7 +17,7 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
+      const deployedNetwork = DeSCA.networks[networkId];
       const instance = new web3.eth.Contract(
         DeSCA.abi,
         deployedNetwork && deployedNetwork.address,
