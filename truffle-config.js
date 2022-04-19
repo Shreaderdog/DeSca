@@ -10,7 +10,7 @@ module.exports = {
     },
   },
   contracts_directory: "./src/contracts/",
-  contracts_build_directory: "./src/client/contracts/",
+  contracts_build_directory: "./src/client/src/contracts/",
   compilers: {
     solc: {
       version: "pragma",
