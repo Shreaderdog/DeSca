@@ -12,32 +12,33 @@ contract DeSCA is AccessControl {
     enum VoterStatus { NOT_VALID, NOT_VOTED, YES, NO }
     enum VoteResult { NOT_VALID, PASSED, FAILED }
 
-    VoteResult decision;
-    uint decision_timestamp;
-    uint num_voters;
-    uint expected_voters;
-    uint num_yes;
-    uint num_no;
-    mapping (address => VoterStatus) voter_votes;
-    address[] voter_addresses;
+    VoteResult decision; // Keeps track of last DAO decision
+    uint decision_timestamp; // Keeps track of the time the last DAO decision was made
+    uint num_voters; // Number of voters currently in the DAO
+    uint expected_voters; // Number of voters expected to vote in the DAO
+    uint num_yes; // Number of yes votes
+    uint num_no; // Number of no votes
+    mapping (address => VoterStatus) voter_votes; // Dictionary used to keep each voters vote
+    address[] voter_addresses; // Array used to store the DAO voters addresses (used to index the voter_votes dictionary)
 
     constructor (address admin_address, uint _expected_voters) {
         _setupRole(DEFAULT_ADMIN_ROLE, admin_address);
 
         decision = VoteResult.NOT_VALID;
         decision_timestamp = 0;
-        num_voters = 1;
+        num_voters = 0;
         expected_voters = _expected_voters;
         num_yes = 0;
         num_no = 0;
         voter_addresses = new address[](99);
 
-        voter_addresses[0] = admin_address;
+        // Add admin to DAO system
+        setupVoter(admin_address);
     }
 
-    function addVoter(address voter) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-
+    // Function used to setup a DAO voter
+    // So sets up their role, status, and address log
+    function setupVoter(address voter) private {
         if (voter_votes[voter] == VoterStatus.NOT_VALID) {
             voter_votes[voter] = VoterStatus.NOT_VOTED;
             voter_addresses[num_voters++] = voter;
@@ -46,16 +47,37 @@ contract DeSCA is AccessControl {
         }
     }
 
-    function vote(address voter, bool vote) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(DAO_ROLE, msg.sender));
+    // Function used to reset variables used for the DAO
+    function resetDAO() private {
+        for (uint i = 0; i < num_voters; i++) {
+            voter_votes[voter_addresses[i]] = VoterStatus.NOT_VALID;
+        }
+        
+        num_voters = 0;
+        num_yes = 0;
+        num_no = 0;
 
-        if (voter_votes[voter] == VoterStatus.NOT_VOTED) {
+        voter_addresses = new address[](99);
+    }
+
+    // Function used by the DAO admin to add DAO voters
+    function addVoter(address voter) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+
+        setupVoter(voter);
+    }
+
+    // Function used by the DAO voters to vote
+    function vote(bool vote) public {
+        require(hasRole(DAO_ROLE, msg.sender));
+
+        if (voter_votes[msg.sender] == VoterStatus.NOT_VOTED) {
             if (vote) {
-                voter_votes[voter] = VoterStatus.YES;
+                voter_votes[msg.sender] = VoterStatus.YES;
 
                 num_yes++;
             } else {
-                voter_votes[voter] = VoterStatus.NO;
+                voter_votes[msg.sender] = VoterStatus.NO;
 
                 num_no++;
             }
@@ -65,13 +87,20 @@ contract DeSCA is AccessControl {
                 decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
                 decision_timestamp = block.timestamp;
 
-                reset();
+                resetDAO();
             }
         }
     }
 
-    function print_status(address voter) public view returns (uint) {
-        return uint(voter_votes[voter]);
+    // Function used by the DAO admin to reset the DAO variables
+    function reset() public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+
+        resetDAO();
+    }
+
+    function print_status() public view returns (uint) {
+        return uint(voter_votes[msg.sender]);
     }
 
     function print_decision() public view returns (uint) {
@@ -81,27 +110,4 @@ contract DeSCA is AccessControl {
     function print_time() public view returns(uint) {
         return decision_timestamp;
     }
- 
-    function reset() public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-
-        num_voters = 0;
-        num_yes = 0;
-        num_no = 0;
-
-        for (uint i = 0; i < num_voters; i++) {
-            voter_votes[voter_addresses[i]] = VoterStatus.NOT_VALID;
-        }
-
-        voter_addresses = new address[](99);
-    }
-
-    // function add(address voter) public returns (string memory) {
-    //     test[voter] = false;
-    //     testLength++;
-
-    //     for (uint i = 0; i < testLength; i++) {
-    //         testt = string(bytes.concat(bytes(testt),"t"));
-    //     }
-    // }
 }
