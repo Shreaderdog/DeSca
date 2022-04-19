@@ -7,83 +7,94 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract DeSCA is AccessControl {
-    // function to reset data
-    // data to hold if users have voted
-    // data to hold users votes
-    // dict[id] = vote
-    // vote function, takes in bool for vote
-    // array for indexes, array for values, array for ids (make sure indexs are consistent) 
-    // check if user has voted before
-
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
 
-    enum VoterValue { NOT_VALID, NOT_VOTED, YES, NO }
+    enum VoterStatus { NOT_VALID, NOT_VOTED, YES, NO }
+    enum VoteResult { NOT_VALID, PASSED, FAILED }
 
+    VoteResult decision;
+    uint decision_timestamp;
     uint num_voters;
     uint expected_voters;
     uint num_yes;
     uint num_no;
-    mapping (address => VoterValue) voter_votes;
+    mapping (address => VoterStatus) voter_votes;
+    address[] voter_addresses;
 
     constructor (address admin_address, uint _expected_voters) {
         _setupRole(DEFAULT_ADMIN_ROLE, admin_address);
 
-        num_voters = 0;
+        decision = VoteResult.NOT_VALID;
+        decision_timestamp = 0;
+        num_voters = 1;
         expected_voters = _expected_voters;
         num_yes = 0;
         num_no = 0;
+        voter_addresses = new address[](99);
+
+        voter_addresses[0] = admin_address;
     }
 
     function addVoter(address voter) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
 
-        if (voter_votes[voter] == VoterValue.NOT_VALID) {
-            voter_votes[voter] = VoterValue.NOT_VOTED;
-            grantRole(DAO_ROLE, voter);
+        if (voter_votes[voter] == VoterStatus.NOT_VALID) {
+            voter_votes[voter] = VoterStatus.NOT_VOTED;
+            voter_addresses[num_voters++] = voter;
 
-            num_voters++;
+            grantRole(DAO_ROLE, voter);
         }
     }
 
     function vote(address voter, bool vote) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(DAO_ROLE, msg.sender));
 
-        if (voter_votes[voter] == VoterValue.NOT_VOTED) {
+        if (voter_votes[voter] == VoterStatus.NOT_VOTED) {
             if (vote) {
-                voter_votes[voter] = VoterValue.YES;
+                voter_votes[voter] = VoterStatus.YES;
 
                 num_yes++;
             } else {
-                voter_votes[voter] = VoterValue.NO;
+                voter_votes[voter] = VoterStatus.NO;
 
                 num_no++;
+            }
+
+            // Make DAO decision
+            if ((num_yes + num_no) == expected_voters) {
+                decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
+                decision_timestamp = block.timestamp;
+
+                reset();
             }
         }
     }
 
-    function decide() private view returns (bool) {
+    function print_status(address voter) public view returns (uint) {
+        return uint(voter_votes[voter]);
+    }
+
+    function print_decision() public view returns (uint) {
+        return uint(decision);
+    }
+
+    function print_time() public view returns(uint) {
+        return decision_timestamp;
+    }
+ 
+    function reset() public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
 
-        if ((num_yes + num_no) == num_voters) {
-            return !(num_no >= num_yes);
+        num_voters = 0;
+        num_yes = 0;
+        num_no = 0;
+
+        for (uint i = 0; i < num_voters; i++) {
+            voter_votes[voter_addresses[i]] = VoterStatus.NOT_VALID;
         }
+
+        voter_addresses = new address[](99);
     }
-
-    function reset() public view returns (address) {
-        // require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-
-        // num_voters = 0;
-        // num_yes = 0;
-        // num_no = 0;
-
-        // for (uint i = 0; i < num_voters; i++) {
-        //     return voter_votes[i];
-        // }
-    }
-
-    // function print() public view returns (bool) {
-    //     return decide();
-    // }
 
     // function add(address voter) public returns (string memory) {
     //     test[voter] = false;
