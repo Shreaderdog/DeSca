@@ -50,15 +50,16 @@ contract Dao is AccessControl {
 
     // Function used to reset variables used for the DAO
     function resetDAO() private {
-        for (uint i = 0; i < num_voters; i++) {
+        for (uint i = 1; i < num_voters; i++) {
             voter_votes[voter_addresses[i]] = VoterStatus.NOT_VALID;
+            delete voter_addresses[i];
         }
         
-        num_voters = 0;
+        voter_votes[voter_addresses[0]] = VoterStatus.NOT_VOTED;
+        num_voters = 1;
         num_yes = 0;
         num_no = 0;
 
-        voter_addresses = new address[](99);
     }
 
     // Function used by the DAO admin to add DAO voters
