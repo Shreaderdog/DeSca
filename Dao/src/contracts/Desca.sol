@@ -21,8 +21,8 @@ contract DeSCA is AccessControl {
     mapping (address => VoterStatus) voter_votes; // Dictionary used to keep each voters vote
     address[] voter_addresses; // Array used to store the DAO voters addresses (used to index the voter_votes dictionary)
 
-    constructor (address admin_address, uint _expected_voters) {
-        _setupRole(DEFAULT_ADMIN_ROLE, admin_address);
+    constructor (uint _expected_voters) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         decision = VoteResult.NOT_VALID;
         decision_timestamp = 0;
@@ -33,7 +33,7 @@ contract DeSCA is AccessControl {
         voter_addresses = new address[](99);
 
         // Add admin to DAO system
-        setupVoter(admin_address);
+        setupVoter(msg.sender);
     }
 
     // Function used to setup a DAO voter
@@ -49,15 +49,15 @@ contract DeSCA is AccessControl {
 
     // Function used to reset variables used for the DAO
     function resetDAO() private {
-        for (uint i = 0; i < num_voters; i++) {
+        for (uint i = 1; i < num_voters; i++) {
             voter_votes[voter_addresses[i]] = VoterStatus.NOT_VALID;
+            delete voter_addresses[i];
         }
         
-        num_voters = 0;
+        voter_votes[voter_addresses[0]] = VoterStatus.NOT_VOTED;
+        num_voters = 1;
         num_yes = 0;
         num_no = 0;
-
-        voter_addresses = new address[](99);
     }
 
     // Function used by the DAO admin to add DAO voters
