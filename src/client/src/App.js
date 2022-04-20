@@ -1,13 +1,16 @@
 import React, { Component } from "react";
 import DeSCA from "./contracts/DeSCA.json";
 import getWeb3 from "./components/getWeb3";
+import Sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
 class App extends Component {
-  state = { numsensors: 0, web3: null, accounts: null, contract: null };
+  state = { labelinfo: {title: 'test', labels: ['mon', 'tues', 'wed', 'thurs']}, datapoints: [1, 2, 3, 4], numsensors: 0, web3: null, accounts: null, contract: null };
 
   componentDidMount = async () => {
+    console.log(this.state.labelinfo);
+    console.log(this.state.datapoints);
     try {
       // Get network provider and web3 instance.
       const web3 = await getWeb3();
@@ -25,7 +28,7 @@ class App extends Component {
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
+      this.setState({ web3: web3, accounts: accounts, contract: instance }, this.runExample);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -37,11 +40,8 @@ class App extends Component {
 
   runExample = async () => {
     const { accounts, contract } = this.state;
-
     // get numer of sensors
-    const response = await contract.methods.totalsensors.call();
-
-
+    const response = await contract.methods.getTotalSensors().call();
     // Update state with the result.
     this.setState({ numsensors: response });
   };
@@ -63,6 +63,7 @@ class App extends Component {
           Try changing the value stored on <strong>line 42</strong> of App.js.
         </p>
         <div>The stored value is: {this.state.numsensors}</div>
+        <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.datapoints}/>
       </div>
     );
   }

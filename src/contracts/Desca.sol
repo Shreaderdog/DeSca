@@ -65,6 +65,10 @@ contract DeSCA is AccessControl {
         return nodeList[nodeIndex[_nodeaddress]];
     }
 
+    function getTotalSensors() external view returns (uint256) {
+        return totalSensors;
+    }
+
     function getFlightFlag() external view returns (bool) {
         return flightflag;
     }
