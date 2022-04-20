@@ -1,12 +1,13 @@
 import React, { Component } from "react";
 import DeSCA from "./contracts/DeSCA.json";
+import Dao from "./contracts/Dao.json";
 import getWeb3 from "./components/getWeb3";
 import Sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
 class App extends Component {
-  state = { labelinfo: {title: 'test', labels: ['mon', 'tues', 'wed', 'thurs']}, datapoints: [1, 2, 3, 4], numsensors: 0, web3: null, accounts: null, contract: null };
+  state = { labelinfo: {title: 'test', labels: ['mon', 'tues', 'wed', 'thurs']}, datapoints: [1, 2, 3, 4], numsensors: 0, web3: null, accounts: null, descacontract: null, daocontract: null };
 
   componentDidMount = async () => {
     console.log(this.state.labelinfo);
@@ -20,15 +21,21 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = DeSCA.networks[networkId];
-      const instance = new web3.eth.Contract(
+      const descadeployedNetwork = DeSCA.networks[networkId];
+      const descainstance = new web3.eth.Contract(
         DeSCA.abi,
-        deployedNetwork && deployedNetwork.address,
+        descadeployedNetwork && descadeployedNetwork.address,
+      );
+
+      const daodeployedNetwork = Dao.networks[networkId];
+      const daoinstance = new web3.eth.Contract(
+        Dao.abi,
+        daodeployedNetwork && daodeployedNetwork.address,
       );
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3: web3, accounts: accounts, contract: instance }, this.runExample);
+      this.setState({ web3: web3, accounts: accounts, descacontract: descainstance, daocontract: daoinstance}, this.runExample);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -39,9 +46,9 @@ class App extends Component {
   };
 
   runExample = async () => {
-    const { accounts, contract } = this.state;
+    const { accounts, descacontract } = this.state;
     // get numer of sensors
-    const response = await contract.methods.getTotalSensors().call();
+    const response = await descacontract.methods.getTotalSensors().call();
     // Update state with the result.
     this.setState({ numsensors: response });
   };
