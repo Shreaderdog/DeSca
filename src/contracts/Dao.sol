@@ -62,6 +62,16 @@ contract Dao is AccessControl {
 
     }
 
+    function resetVotes() private {
+    for (uint i = 0; i < num_voters; i++) {
+        voter_votes[voter_addresses[i]] = VoterStatus.NOT_VOTED;
+    }
+
+    num_yes = 0;
+    num_no = 0;
+
+}
+
     // Function used by the DAO admin to add DAO voters
     function addVoter(address _voter) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
@@ -97,7 +107,7 @@ contract Dao is AccessControl {
                 decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
                 decision_timestamp = block.timestamp;
 
-                resetDAO();
+                resetVotes();
             }
         }
     }
@@ -119,5 +129,14 @@ contract Dao is AccessControl {
 
     function print_time() public view returns(uint) {
         return decision_timestamp;
+    }
+
+    function get_decision() public view returns (bool) {
+        if (decision == VoteResult.PASSED) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }
