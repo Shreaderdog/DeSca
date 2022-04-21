@@ -53,6 +53,22 @@ class App extends Component {
     this.setState({ numsensors: response });
   };
 
+  voteNo = async(e) => {
+    e.preventDefault();
+
+    const { daocontract } = this.state;
+
+    await daocontract.methods.vote(false).send({from: this.state.accounts[0]});
+  }
+
+  voteYes = async(e) => {
+    e.preventDefault();
+
+    const  { daocontract } = this.state;
+
+    await daocontract.methods.vote(true).send({from: this.state.accounts[0]});
+  }
+
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
@@ -71,6 +87,8 @@ class App extends Component {
         </p>
         <div>The stored value is: {this.state.numsensors}</div>
         <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.datapoints}/>
+        <button onClick={App.voteNo}>Vote No</button>
+        <button onClick={App.voteYes}>Vote Yes</button>
       </div>
     );
   }

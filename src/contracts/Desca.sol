@@ -50,7 +50,7 @@ contract DeSCA is AccessControl {
 
     function addNode(address _nodeaddress) public {
         require(hasRole(NET_ADMIN_ROLE, msg.sender));
-        grantRole(DATA_SENDER_ROLE, msg.sender);
+        grantRole(DATA_SENDER_ROLE, _nodeaddress);
         totalNodes += 1;
         node memory s = node(_nodeaddress, 0, new int256[](0), new uint256[](0),  new bool[](0),  new bool[](0) );
         nodeList.push(s);

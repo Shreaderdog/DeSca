@@ -6,7 +6,7 @@ import time
 from sensorToBlockchain import BUFFER_SIZE
 from web3 import Web3
 
-with open("abis/DAO.json") as f:
+with open("abis/Dao.json") as f:
     info_json = json.load(f)
 abi = info_json["abi"]
 
@@ -23,7 +23,7 @@ my_address = config["local_bc_address"]
 contract = w3.eth.contract(address=contractaddress, abi=abi)
 while (true):
     time.sleep(10)
-    flight = contract.functions.flightflag().call({'from': my_address})
+    flight = contract.functions.get_decision().call()
     
     if flight:
         fly()
