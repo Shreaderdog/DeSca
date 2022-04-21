@@ -22,6 +22,10 @@ contract DeSCA is AccessControl {
         uint256[] sensorsIDs;
     }
 
+    struct outputdata {
+        int256[] outdata;
+    }
+
     uint cyclesensors;
     uint256 totalNodes;
     uint256 totalSensors;
@@ -79,6 +83,16 @@ contract DeSCA is AccessControl {
 
     function getFlightFlag() external view returns (bool) {
         return flightflag;
+    }
+
+    function getData() external view returns (outputdata[] memory) {
+        outputdata[] memory q = new outputdata[] (totalSensors);
+        for(uint i = 0; i < totalSensors; i++) {
+            outputdata memory output =  outputdata(new int256[](0));
+            output.outdata = sensors[i].data;
+            q[i] = output;
+        }
+        return q;
     }
 
     function reportData(int256[] calldata _sensordata) external {
