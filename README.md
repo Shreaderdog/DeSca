@@ -21,7 +21,7 @@ A decentralized blockchain-based SCADA system project by students at the Univers
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#startingdesca">Starting DeSca</a></li>
+    <li><a href="#starting-desca">Starting DeSca</a></li>
   </ol>
 </details>
 
