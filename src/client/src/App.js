@@ -6,8 +6,27 @@ import Sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
+// see if index 0 of accounts is the current address
+// test switching accounts to see, or there may be a function to get the current account
+
 class App extends Component {
-  state = { labelinfo: {title: 'test', labels: ['mon', 'tues', 'wed', 'thurs']}, datapoints: [1, 2, 3, 4], numsensors: 0, web3: null, accounts: null, descacontract: null, daocontract: null };
+  state = { labelinfo: {title: 'test', labels: ['mon', 'tues', 'wed', 'thurs']}, datapoints: [1, 2, 3, 4], numsensors: 0, web3: null, accounts: null, descacontract: null, daocontract: null, address_input: "" };
+
+  handleChange = async (event) => {
+    this.setState({address_input: event.target.value});
+  }
+
+  handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.daocontract.methods.addVoter(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
 
   componentDidMount = async () => {
     console.log(this.state.labelinfo);
@@ -69,6 +88,16 @@ class App extends Component {
     await daocontract.methods.vote(true).send({from: this.state.accounts[0]});
   }
 
+  getDecision = async(e) => {
+    e.preventDefault();
+
+    console.log("ran");
+
+    await this.state.daocontract.methods.print_decision().send({ from: this.state.accounts[0] }).then(function(receipt) {
+      console.log(receipt);
+    });
+  }
+
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
@@ -89,6 +118,11 @@ class App extends Component {
         <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.datapoints}/>
         <button onClick={App.voteNo}>Vote No</button>
         <button onClick={App.voteYes}>Vote Yes</button>
+        <form onSubmit={this.handleSubmit}>
+          <input type="text" placeholder="Voter address" value={this.state.value} onChange={this.handleChange} />
+          <input type="submit" value="Add voter" />
+        </form>
+        <button onClick={this.getDecision}>Get Decision</button>
       </div>
     );
   }
