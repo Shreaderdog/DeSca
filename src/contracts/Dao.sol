@@ -63,14 +63,14 @@ contract Dao is AccessControl {
     }
 
     function resetVotes() private {
-    for (uint i = 0; i < num_voters; i++) {
-        voter_votes[voter_addresses[i]] = VoterStatus.NOT_VOTED;
+        for (uint i = 0; i < num_voters; i++) {
+            voter_votes[voter_addresses[i]] = VoterStatus.NOT_VOTED;
+        }
+
+        num_yes = 0;
+        num_no = 0;
+
     }
-
-    num_yes = 0;
-    num_no = 0;
-
-}
 
     // Function used by the DAO admin to add DAO voters
     function addVoter(address _voter) public {
@@ -94,19 +94,16 @@ contract Dao is AccessControl {
                 num_no++;
             }
 
-            bool flyvote = sensors.getFlightFlag();
-            if(flyvote) {
-                num_yes++;
-            }
-            else {
-                num_no++;
-            }
-
             // Make DAO decision
             if ((num_yes + num_no) == expected_voters+1) {
+                // Add sensor data decision to DAO votes
+                sensors.getFlightFlag() ? num_yes++ : num_no++;
+
+                // Make DAO decision
                 decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
                 decision_timestamp = block.timestamp;
 
+                // Cleanup DAO variables once decision has been made
                 resetVotes();
             }
         }
@@ -124,7 +121,7 @@ contract Dao is AccessControl {
     }
 
     function print_decision() public view returns (uint) {
-        return uint(decision);
+        return 5;//uint(decision);
     }
 
     function print_time() public view returns(uint) {
