@@ -54,6 +54,7 @@ contract DeSCA is AccessControl {
         totalNodes += 1;
         node memory s = node(_nodeaddress, 0, new int256[](0), new uint256[](0),  new bool[](0),  new bool[](0) );
         nodeList.push(s);
+        nodeIndex[_nodeaddress] = nodeList.length-1;
     }
 
     function removeNode(address _nodeaddress) public {
