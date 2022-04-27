@@ -1,5 +1,6 @@
 // File: node_modules\@openzeppelin\contracts\access\IAccessControl.sol
 
+
 // OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
 
 pragma solidity ^0.8.0;
@@ -469,42 +470,39 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
     }
 }
 
-// File: contracts\desca.sol
+// File: src\contracts\DESCATWO.sol
 
 //SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
 
+
 contract DeSCA is AccessControl {
-    //roles
-    bytes32 public constant DATA_SENDER_ROLE = keccak256("DATA_SENDER_ROLE");
+    bytes32 public constant SENSOR_ROLE = keccak256("SENSOR_ROLE");
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
     bytes32 public constant NET_ADMIN_ROLE = keccak256("NET_ADMIN_ROLE");
 
-    struct node {
-        address nodeAddress; // blockchain address of node
-        uint256 numSensors; // number of sensors associated with this node
-        int256[] sensordata; // data from each sensor of node
-        uint256[] noDataTimer; // count of cycles since data was last received from sensor
-        bool[] ignore; // shows whether sensor can be ignored for final decision
-        bool[] recd; // tracks whether data was received this cycle
-    }
+    uint256 totalSensors;
+    uint256 targetPercentage;
+    uint256 sensorTimeout;
+    bool lastResult;
+    int256[] sensorData;
+    bool[] recd;
+    uint256[] timer;
+    mapping(address => uint256) sensorMap;
 
-    uint256 public totalNodes; // number of nodes on network
-    uint256 public totalSensors; // number of sensors across all nodes
-    uint256 public targetPercentage; // percentage of sensors above threshold
-    uint256 public sensorTimeout; // number of times no data can be received before deactivating sensor requirement
-    bool public flightflag; // flag for DAO to see if preflight passed
-    node[] public nodeList; // list of all nodes
-    mapping(address => uint256) nodeIndex;
-
-    constructor(uint256 _targetpercent, uint256 _timeout) {
+    constructor(uint256 _targetPercent, uint256 _timeout) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        totalNodes = 0;
-        targetPercentage = _targetpercent;
+        totalSensors = 0;
+        targetPercentage = _targetPercent;
         sensorTimeout = _timeout;
-        flightflag = false;
-        _setRoleAdmin(DATA_SENDER_ROLE, NET_ADMIN_ROLE);
+        lastResult = false;
+        _setRoleAdmin(SENSOR_ROLE, NET_ADMIN_ROLE);
+    }
+    
+    function setupDAO(address _daoaddress) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        grantRole(DAO_ROLE, _daoaddress);
     }
 
     function addAdmin(address _adminAccount) public {
@@ -512,85 +510,207 @@ contract DeSCA is AccessControl {
         grantRole(NET_ADMIN_ROLE, _adminAccount);
     }
 
-    function removeAdmin(address _adminAccount) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        revokeRole(NET_ADMIN_ROLE, _adminAccount);
-    }
-
-    function addNode(address _nodeaddress) public {
+    function addSensor(address _sensorAddress) public {
         require(hasRole(NET_ADMIN_ROLE, msg.sender));
-        grantRole(DATA_SENDER_ROLE, msg.sender);
-        totalNodes += 1;
-        node memory s = node(_nodeaddress, 0, new int256[](0), new uint256[](0),  new bool[](0),  new bool[](0) );
-        nodeList.push(s);
+        grantRole(SENSOR_ROLE, _sensorAddress);
+        totalSensors++;
+        sensorData.push(-100000);
+        sensorMap[_sensorAddress] = sensorData.length - 1;
+        recd.push(false);
+        timer.push(0);
     }
 
-    function removeNode(address _nodeaddress) public {
-        require(hasRole(NET_ADMIN_ROLE, msg.sender));
-        revokeRole(DATA_SENDER_ROLE, _nodeaddress);
-    }
-
-    function getNode(address _nodeaddress) internal view returns (node memory){
-        return nodeList[nodeIndex[_nodeaddress]];
-    }
-
-    function reportData(int256[] calldata _sensordata) external {
-        require(hasRole(DATA_SENDER_ROLE, msg.sender));
-
-        node memory cnodeorig = nodeList[nodeIndex[msg.sender]];
-        node memory currnode = node(cnodeorig.nodeAddress, _sensordata.length, _sensordata, new uint256[](_sensordata.length),  new bool[](_sensordata.length),  new bool[](_sensordata.length) );
-
-        for(uint i = 0; i < cnodeorig.noDataTimer.length; i++) {
-            
-            currnode.noDataTimer[i] = cnodeorig.noDataTimer[i];
-        }
-
-        for (uint i = 0; i < _sensordata.length; i++) {
-
-            if(_sensordata[i] == -100000) {
-                currnode.noDataTimer[i] += 1;
-                currnode.recd[i] = false;
-            }
-            else {
-                currnode.noDataTimer[i] = 0;
-                currnode.recd[i] = true;
-                currnode.ignore[i] = false;
-            }
-
-            if(currnode.noDataTimer[i] >= sensorTimeout) {
-                currnode.ignore[i] = true;
-            }
-
-            uint index = nodeIndex[msg.sender];
-            nodeList[index] = currnode;
-        }
-        bool good = true;
-        uint gooddata = 0;
-        totalSensors = 0;
-        for(uint j = 0; j < nodeList.length; j++) {
-            totalSensors += nodeList[j].numSensors;
-            for(uint k = 0; k < nodeList[j].numSensors; k++) {
-                if(nodeList[j].recd[k] == false && nodeList[j].ignore[k] == false) {
-                    good = false;
-                }
-                else if(nodeList[j].sensordata[k] < 8000 && nodeList[j].sensordata[k] > 4000) {
-                    gooddata += 1;
-                }
-            }
-            if(good == false) {
-                break;
-            }
-        }
-
-        if((gooddata*100)/totalSensors < targetPercentage) {
-            good = false;
-        }
-
-        if(good) {
-            flightflag = true;
+    function reportData(int256 _sensorData) external {
+        require(hasRole(SENSOR_ROLE, msg.sender));
+        uint256 index = sensorMap[msg.sender];
+        sensorData[index] = _sensorData;
+        if (_sensorData == -100000) {
+            recd[index] = false;
+            timer[index]++;
         }
         else {
-            flightflag = false;
+            recd[index] = true;
+            timer[index] = 0;
+        }
+    }
+
+    function getFlight() external returns (bool) {
+        require(hasRole(DAO_ROLE, msg.sender));
+        uint yes = 0;
+        int data;
+        for (uint i = 0; i < sensorData.length - 1; i++) {
+            data = sensorData[i];
+            if(data > 4000 && data < 8000 && recd[i]) {
+                yes++;
+            }
+            recd[i] = false;
+        }
+        if((yes*100)/totalSensors > targetPercentage) {
+            lastResult = true;
+            return true;
+        }
+        else {
+            lastResult = false;
+            return false;
+        }
+    }
+
+    function getData() external view returns (int[] memory) {
+        return sensorData;
+    }
+
+    function getTotalSensors() external view returns (uint) {
+        return totalSensors;
+    }
+
+    function getLastResult() external view returns (bool) {
+        return lastResult;
+    }
+
+    function getTimer() external view returns (uint[] memory) {
+        return timer;
+    }
+
+    function getRecd() external view returns (bool[] memory) {
+        return recd;
+    }
+}
+
+// File: src\contracts\Dao.sol
+
+pragma solidity ^0.8.0;
+
+
+
+contract Dao is AccessControl {
+    bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
+
+    enum VoterStatus { NOT_VALID, NOT_VOTED, YES, NO }
+    enum VoteResult { NOT_VALID, PASSED, FAILED }
+
+    VoteResult decision; // Keeps track of last DAO decision
+    uint decision_timestamp; // Keeps track of the time the last DAO decision was made
+    uint num_voters; // Number of voters currently in the DAO
+    uint expected_voters; // Number of voters expected to vote in the DAO
+    uint num_yes; // Number of yes votes
+    uint num_no; // Number of no votes
+    mapping (address => VoterStatus) voter_votes; // Dictionary used to keep each voters vote
+    address[] voter_addresses; // Array used to store the DAO voters addresses (used to index the voter_votes dictionary)
+    DeSCA sensors;
+
+    constructor (uint _expected_voters, address _sensoraddress) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
+        decision = VoteResult.NOT_VALID;
+        decision_timestamp = 0;
+        num_voters = 0;
+        expected_voters = _expected_voters;
+        num_yes = 0;
+        num_no = 0;
+        voter_addresses = new address[](99);
+
+        // Add admin to DAO system
+        setupVoter(msg.sender);
+        sensors = DeSCA(_sensoraddress);
+    }
+
+    // Function used to setup a DAO voter
+    // So sets up their role, status, and address log
+    function setupVoter(address _voter) private {
+        if (voter_votes[_voter] == VoterStatus.NOT_VALID) {
+            voter_votes[_voter] = VoterStatus.NOT_VOTED;
+            voter_addresses[num_voters++] = _voter;
+
+            grantRole(DAO_ROLE, _voter);
+        }
+    }
+
+    // Function used to reset variables used for the DAO
+    function resetDAO() private {
+        for (uint i = 1; i < num_voters; i++) {
+            voter_votes[voter_addresses[i]] = VoterStatus.NOT_VALID;
+            delete voter_addresses[i];
+        }
+        
+        voter_votes[voter_addresses[0]] = VoterStatus.NOT_VOTED;
+        num_voters = 1;
+        num_yes = 0;
+        num_no = 0;
+
+    }
+
+    function resetVotes() private {
+        for (uint i = 0; i < num_voters; i++) {
+            voter_votes[voter_addresses[i]] = VoterStatus.NOT_VOTED;
+        }
+
+        num_yes = 0;
+        num_no = 0;
+
+    }
+
+    // Function used by the DAO admin to add DAO voters
+    function addVoter(address _voter) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+
+        setupVoter(_voter);
+    }
+
+    // Function used by the DAO voters to vote
+    function vote(bool _vote) public {
+        require(hasRole(DAO_ROLE, msg.sender));
+
+        if (voter_votes[msg.sender] == VoterStatus.NOT_VOTED) {
+            if (_vote) {
+                voter_votes[msg.sender] = VoterStatus.YES;
+
+                num_yes++;
+            } else {
+                voter_votes[msg.sender] = VoterStatus.NO;
+
+                num_no++;
+            }
+
+            // Make DAO decision
+            if ((num_yes + num_no) == expected_voters) {
+                // Add sensor data decision to DAO votes
+                sensors.getFlight() ? num_yes++ : num_no++;
+
+                // Make DAO decision
+                decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
+                decision_timestamp = block.timestamp;
+
+                // Cleanup DAO variables once decision has been made
+                resetVotes();
+            }
+        }
+    }
+
+    // Function used by the DAO admin to reset the DAO variables
+    function reset() public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+
+        resetDAO();
+    }
+
+    function print_status() public view returns (uint) {
+        return uint(voter_votes[msg.sender]);
+    }
+
+    function print_decision() public view returns (uint) {
+        return 5;//uint(decision);
+    }
+
+    function print_time() public view returns(uint) {
+        return decision_timestamp;
+    }
+
+    function get_decision() public view returns (bool) {
+        if (decision == VoteResult.PASSED) {
+            return true;
+        }
+        else {
+            return false;
         }
     }
 }

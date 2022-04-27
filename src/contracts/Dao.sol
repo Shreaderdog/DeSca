@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./Desca.sol";
+import "./DESCATWO.sol";
+
 
 contract Dao is AccessControl {
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
@@ -95,9 +95,9 @@ contract Dao is AccessControl {
             }
 
             // Make DAO decision
-            if ((num_yes + num_no) == expected_voters+1) {
+            if ((num_yes + num_no) == expected_voters) {
                 // Add sensor data decision to DAO votes
-                sensors.getFlightFlag() ? num_yes++ : num_no++;
+                sensors.getFlight() ? num_yes++ : num_no++;
 
                 // Make DAO decision
                 decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
