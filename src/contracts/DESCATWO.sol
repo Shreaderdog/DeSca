@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract DeSCA is AccessControl {
+contract DeSCATWO is AccessControl {
     bytes32 public constant SENSOR_ROLE = keccak256("SENSOR_ROLE");
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
     bytes32 public constant NET_ADMIN_ROLE = keccak256("NET_ADMIN_ROLE");

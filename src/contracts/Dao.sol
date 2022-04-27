@@ -19,7 +19,7 @@ contract Dao is AccessControl {
     uint num_no; // Number of no votes
     mapping (address => VoterStatus) voter_votes; // Dictionary used to keep each voters vote
     address[] voter_addresses; // Array used to store the DAO voters addresses (used to index the voter_votes dictionary)
-    DeSCA sensors;
+    DeSCATWO sensors;
 
     constructor (uint _expected_voters, address _sensoraddress) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -34,7 +34,7 @@ contract Dao is AccessControl {
 
         // Add admin to DAO system
         setupVoter(msg.sender);
-        sensors = DeSCA(_sensoraddress);
+        sensors = DeSCATWO(_sensoraddress);
     }
 
     // Function used to setup a DAO voter
