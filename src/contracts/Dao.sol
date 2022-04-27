@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-
 import "./DESCATWO.sol";
 
 contract DeSCATWO is AccessControl {

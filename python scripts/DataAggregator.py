@@ -1,7 +1,6 @@
 import time
 import socket
 import json
-from sensorToBlockchain import BUFFER_SIZE
 from web3 import Web3
 
 TCP_PORT = 1025
@@ -20,8 +19,6 @@ w3 = Web3(Web3.HTTPProvider(host))
 
 contractaddress = Web3.toChecksumAddress(config["contract_bc_address"])
 
-my_address = config["local_bc_address"]
-
 sensordata = config["sensor_addresses"]
 
 contract = w3.eth.contract(address=contractaddress, abi=abi)
@@ -37,4 +34,5 @@ while (true):
             s.close()
         except:
             sensordata[x] = -10000
-    contract.functions.reportData(sensordata).transact({'from': my_address})
+    for x in range(len(config["sensor_bc_addresses"])):
+        contract.functions.reportData(sensordata[x]).transact({'from': config["sensor_bc_addresses"][x]})
