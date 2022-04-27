@@ -1,19 +1,17 @@
 import React, { Component } from "react";
-import DeSCA from "./contracts/DeSCA.json";
+import DeSCATWO from "./contracts/DeSCATWO.json";
 import Dao from "./contracts/Dao.json";
 import getWeb3 from "./components/getWeb3";
-import Sensorgraph from "./components/sensorgraph";
+import sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
 class App extends Component {
   state = {
     labelinfo: {
-      title: 'test',
+      title: 'Current Data',
       labels: ['mon', 'tues', 'wed', 'thurs']
     },
-    datapoints: [1, 2, 3, 4],
-    numsensors: 0,
     web3: null,
     descacontract: null,
     daocontract: null,
@@ -25,7 +23,13 @@ class App extends Component {
     expected_votes: null,
     votes: 0,
     dao_status: null,
-    last_decided: null
+    last_decided: null,
+    //desca info
+    total_sensors: 0,
+    sensor_data: null,
+    last_result: false,
+    timer: null,
+    recd: null
   };
 
   fetchUserInfo = async () => {
@@ -35,6 +39,25 @@ class App extends Component {
       instance.setState({
         is_admin: data[0],
         vote_status: data[1]
+      });
+    });
+  }
+
+  fetchDESCAInfo = async () => {
+    const instance = this;
+
+    await this.state.descacontract.methods.descainfo().call().then(function(data) {
+      let label = Array.from({length: data[0]}, (_, i) => i + 1);
+      instance.setState({
+        total_sensors: data[0],
+        sensor_data: data[1],
+        last_result: data[2],
+        timer: data[3],
+        recd: data[4],
+        labelinfo: {
+          title: instance.state.labelinfo.title,
+          labels: label
+        }
       });
     });
   }
@@ -75,9 +98,9 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const descadeployedNetwork = DeSCA.networks[networkId];
+      const descadeployedNetwork = DeSCATWO.networks[networkId];
       const descainstance = new web3.eth.Contract(
-        DeSCA.abi,
+        DeSCATWO.abi,
         descadeployedNetwork && descadeployedNetwork.address,
       );
 
@@ -99,6 +122,7 @@ class App extends Component {
 
       this.fetchDAOInfo();
       this.fetchUserInfo();
+      this.fetchDESCAInfo();
 
       const instance = this;
 
@@ -146,6 +170,16 @@ class App extends Component {
         <h1>DeSca Dapp DAO</h1>
         <p>Current address: {this.state.web3.eth.defaultAccount} {this.state.is_admin ? (<b>(admin)</b>) : ("")}</p>
         
+        <h2 className="section">Aggragated Data Info</h2>
+        <p>Total Sensors: {this.state.total_sensors}</p>
+        <p>Last Result from Sensors: {this.state.last_result}</p>
+        <h3>Sensor Status:</h3>
+        <div className="dataVis"> 
+        {this.state.sensor_data.map((datapoint, i) => <span>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
+        </div>
+        <sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
+
+
         <h2 className="section">DAO Info</h2>
         {(() => {
           if (this.state.dao_status == 0) {

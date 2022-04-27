@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./DESCATWO.sol";
 
-contract DeSCATWO is AccessControl {
+contract Dao is AccessControl {
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
 
     enum VoterStatus { NOT_VALID, NOT_VOTED, YES, NO }

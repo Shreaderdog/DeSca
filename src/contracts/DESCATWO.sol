@@ -101,4 +101,8 @@ contract DeSCATWO is AccessControl {
     function getRecd() external view returns (bool[] memory) {
         return recd;
     }
+
+    function descaInfo() external view returns (uint, int[] memory, bool, uint[] memory, bool[] memory) {
+        return (totalSensors, sensorData, lastResult, timer, recd);
+    }
 }

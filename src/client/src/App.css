@@ -5,3 +5,7 @@
 .section {
   margin-top: 20px;
 }
+
+.dataVis {
+  display:flex;
+}
