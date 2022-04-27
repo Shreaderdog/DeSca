@@ -6,11 +6,51 @@ import Sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
-// see if index 0 of accounts is the current address
-// test switching accounts to see, or there may be a function to get the current account
-
 class App extends Component {
-  state = { labelinfo: {title: 'test', labels: ['mon', 'tues', 'wed', 'thurs']}, datapoints: [1, 2, 3, 4], numsensors: 0, web3: null, accounts: null, descacontract: null, daocontract: null, address_input: "" };
+  state = {
+    labelinfo: {
+      title: 'test',
+      labels: ['mon', 'tues', 'wed', 'thurs']
+    },
+    datapoints: [1, 2, 3, 4],
+    numsensors: 0,
+    web3: null,
+    descacontract: null,
+    daocontract: null,
+    // User info
+    is_admin: false,
+    vote_status: 0,
+    address_input: "",
+    // DAO info
+    expected_votes: null,
+    votes: 0,
+    dao_status: null,
+    last_decided: null
+  };
+
+  fetchUserInfo = async () => {
+    let instance = this;
+
+    await this.state.daocontract.methods.user_info().call().then(function(data) {
+      instance.setState({
+        is_admin: data[0],
+        vote_status: data[1]
+      });
+    });
+  }
+
+  fetchDAOInfo = async () => {
+    const instance = this;
+
+    await this.state.daocontract.methods.dao_info().call().then(function(data) {
+      instance.setState({
+        expected_votes: data[0],
+        votes: data[1],
+        dao_status: data[2],
+        last_decided: data[3]
+      });
+    });
+  }
 
   handleChange = async (event) => {
     this.setState({address_input: event.target.value});
@@ -29,14 +69,9 @@ class App extends Component {
   }
 
   componentDidMount = async () => {
-    console.log(this.state.labelinfo);
-    console.log(this.state.datapoints);
     try {
       // Get network provider and web3 instance.
       const web3 = await getWeb3();
-
-      // Use web3 to get the user's accounts.
-      const accounts = await web3.eth.getAccounts();
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
@@ -52,9 +87,26 @@ class App extends Component {
         daodeployedNetwork && daodeployedNetwork.address,
       );
 
+      
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3: web3, accounts: accounts, descacontract: descainstance, daocontract: daoinstance}, this.runExample);
+      this.setState({ web3: web3, descacontract: descainstance, daocontract: daoinstance}, this.runExample);
+      
+      // Use web3 to get the user's account and set it as the default account for contract calls
+      await web3.eth.getAccounts().then(function(accounts) {
+        web3.eth.defaultAccount = accounts[0];
+      });
+
+      this.fetchDAOInfo();
+      this.fetchUserInfo();
+
+      const instance = this;
+
+      // Event lisener to handle the user changing their account via metamask
+      window.ethereum.on('accountsChanged', function (accounts) {
+        web3.eth.defaultAccount = accounts[0];
+        instance.fetchUserInfo();
+      })
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -64,37 +116,23 @@ class App extends Component {
     }
   };
 
-  runExample = async () => {
-    const { accounts, descacontract } = this.state;
-    // get numer of sensors
-    const response = await descacontract.methods.getTotalSensors().call();
-    // Update state with the result.
-    this.setState({ numsensors: response });
-  };
+  voteYes = async(e) => {
+    e.preventDefault();
+
+    const instance = this;
+    await this.state.daocontract.methods.vote(true).send({ from: this.state.web3.eth.defaultAccount }).then(function() {
+      instance.fetchUserInfo();
+      instance.fetchDAOInfo();
+    });
+  }
 
   voteNo = async(e) => {
     e.preventDefault();
 
-    const { daocontract } = this.state;
-
-    await daocontract.methods.vote(false).send({from: this.state.accounts[0]});
-  }
-
-  voteYes = async(e) => {
-    e.preventDefault();
-
-    const  { daocontract } = this.state;
-
-    await daocontract.methods.vote(true).send({from: this.state.accounts[0]});
-  }
-
-  getDecision = async(e) => {
-    e.preventDefault();
-
-    console.log("ran");
-
-    await this.state.daocontract.methods.print_decision().send({ from: this.state.accounts[0] }).then(function(receipt) {
-      console.log(receipt);
+    const instance = this;
+    await this.state.daocontract.methods.vote(false).send({ from: this.state.web3.eth.defaultAccount }).then(function() {
+      instance.fetchUserInfo();
+      instance.fetchDAOInfo();
     });
   }
 
@@ -102,27 +140,48 @@ class App extends Component {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
+
     return (
       <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 42</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.numsensors}</div>
-        <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.datapoints}/>
-        <button onClick={App.voteNo}>Vote No</button>
-        <button onClick={App.voteYes}>Vote Yes</button>
-        <form onSubmit={this.handleSubmit}>
-          <input type="text" placeholder="Voter address" value={this.state.value} onChange={this.handleChange} />
-          <input type="submit" value="Add voter" />
-        </form>
-        <button onClick={this.getDecision}>Get Decision</button>
+        <h1>DeSca Dapp DAO</h1>
+        <p>Current address: {this.state.web3.eth.defaultAccount} {this.state.is_admin ? (<b>(admin)</b>) : ("")}</p>
+        
+        <h2 className="section">DAO Info</h2>
+        {(() => {
+          if (this.state.dao_status == 0) {
+            return (<h3 style={{color: "gray"}}>Waiting for voters</h3>)
+          } else if (this.state.dao_status == 1) {
+            return (<h3 style={{color: "green"}}>Vote Passed</h3>)
+          } else if (this.state.dao_status == 2) {
+            return (<h3 style={{color: "red"}}>Vote Failed</h3>)
+          }
+        })()}
+        <p>{this.state.votes}/{this.state.expected_votes} Votes</p>
+
+        {(() => {
+          if (this.state.vote_status == 0) {
+            return (<p>You are not a voter in this DAO</p>)
+          } else if (this.state.vote_status == 1) {
+            return (<>
+              <button className="btn-primary" style={{marginRight: "10px"}} onClick={this.voteYes}>Vote Yes</button>
+              <button className="btn-danger"  onClick={this.voteNo}>Vote No</button>
+            </>)
+          } else {
+            return (<h2 style={{color: "red"}}>Vote Failed</h2>)
+          }
+        })()}
+
+        {
+          this.state.is_admin ? (
+            <>
+              <h3 className="section">Admin</h3>
+              <form onSubmit={this.handleSubmit}>
+                <input type="text" placeholder="Voter address" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Add voter" />
+              </form>
+            </>
+          ) : ("")
+        }
       </div>
     );
   }

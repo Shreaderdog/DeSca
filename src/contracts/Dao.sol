@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./Desca.sol";
 
-contract Dao is AccessControl {
+import "./DESCATWO.sol";
+
+contract DeSCATWO is AccessControl {
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
 
     enum VoterStatus { NOT_VALID, NOT_VOTED, YES, NO }
@@ -19,7 +20,7 @@ contract Dao is AccessControl {
     uint num_no; // Number of no votes
     mapping (address => VoterStatus) voter_votes; // Dictionary used to keep each voters vote
     address[] voter_addresses; // Array used to store the DAO voters addresses (used to index the voter_votes dictionary)
-    DeSCA sensors;
+    DeSCATWO sensors;
 
     constructor (uint _expected_voters, address _sensoraddress) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -34,7 +35,7 @@ contract Dao is AccessControl {
 
         // Add admin to DAO system
         setupVoter(msg.sender);
-        sensors = DeSCA(_sensoraddress);
+        sensors = DeSCATWO(_sensoraddress);
     }
 
     // Function used to setup a DAO voter
@@ -95,9 +96,9 @@ contract Dao is AccessControl {
             }
 
             // Make DAO decision
-            if ((num_yes + num_no) == expected_voters+1) {
+            if ((num_yes + num_no) == expected_voters) {
                 // Add sensor data decision to DAO votes
-                sensors.getFlightFlag() ? num_yes++ : num_no++;
+                sensors.getFlight() ? num_yes++ : num_no++;
 
                 // Make DAO decision
                 decision = !(num_no >= num_yes) ? VoteResult.PASSED : VoteResult.FAILED;
@@ -116,24 +117,11 @@ contract Dao is AccessControl {
         resetDAO();
     }
 
-    function print_status() public view returns (uint) {
-        return uint(voter_votes[msg.sender]);
+    function dao_info() public view returns (uint, uint, uint, uint) {
+        return (expected_voters, (num_yes + num_no), uint(decision), decision_timestamp);
     }
 
-    function print_decision() public view returns (uint) {
-        return 5;//uint(decision);
-    }
-
-    function print_time() public view returns(uint) {
-        return decision_timestamp;
-    }
-
-    function get_decision() public view returns (bool) {
-        if (decision == VoteResult.PASSED) {
-            return true;
-        }
-        else {
-            return false;
-        }
+    function user_info() public view returns (bool, uint) {
+        return (hasRole(DEFAULT_ADMIN_ROLE, msg.sender), uint(voter_votes[msg.sender]));
     }
 }
