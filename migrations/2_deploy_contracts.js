@@ -1,4 +1,4 @@
-const datacontract = artifacts.require("DeSCA");
+const datacontract = artifacts.require("DESCATWO");
 const daocontract = artifacts.require("Dao");
 
 module.exports = async function(deployer, network, accounts) {
@@ -6,4 +6,7 @@ module.exports = async function(deployer, network, accounts) {
     const sensorcontract = await datacontract.deployed();
 
     await deployer.deploy(daocontract, 6, sensorcontract.address);
+    const daoaddress = await daocontract.deployed();
+
+    await sensorcontract.setupDAO(daoaddress.address);
 }
