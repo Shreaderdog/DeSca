@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import DeSCATWO from "./contracts/DeSCATWO.json";
 import Dao from "./contracts/Dao.json";
 import getWeb3 from "./components/getWeb3";
-import sensorgraph from "./components/sensorgraph";
+import Sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
@@ -26,10 +26,10 @@ class App extends Component {
     last_decided: null,
     //desca info
     total_sensors: 0,
-    sensor_data: null,
+    sensor_data: [0, 0, 0, 0, 0, 0],
     last_result: false,
-    timer: null,
-    recd: null
+    timer: [0, 0, 0, 0, 0, 0],
+    recd: [false, false, false, false, false, false]
   };
 
   fetchUserInfo = async () => {
@@ -46,7 +46,7 @@ class App extends Component {
   fetchDESCAInfo = async () => {
     const instance = this;
 
-    await this.state.descacontract.methods.descainfo().call().then(function(data) {
+    await this.state.descacontract.methods.descaInfo().call().then(function(data) {
       let label = Array.from({length: data[0]}, (_, i) => i + 1);
       instance.setState({
         total_sensors: data[0],
@@ -175,9 +175,9 @@ class App extends Component {
         <p>Last Result from Sensors: {this.state.last_result}</p>
         <h3>Sensor Status:</h3>
         <div className="dataVis"> 
-        {this.state.sensor_data.map((datapoint, i) => <span>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
+        {this.state.sensor_data.map((datapoint, i) => <span key={i}>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
         </div>
-        <sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
+        <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
 
 
         <h2 className="section">DAO Info</h2>
