@@ -65,6 +65,11 @@ contract DeSCATWO is AccessControl {
         require(hasRole(DAO_ROLE, msg.sender));
         uint yes = 0;
         int data;
+
+        if(totalSensors == 0) {
+            return false;
+        }
+
         for (uint i = 0; i < sensorData.length - 1; i++) {
             data = sensorData[i];
             if(data > 4000 && data < 8000 && recd[i]) {
