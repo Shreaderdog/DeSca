@@ -35,7 +35,9 @@ class App extends Component {
   fetchUserInfo = async () => {
     let instance = this;
 
-    await this.state.daocontract.methods.user_info().call().then(function(data) {
+    await this.state.daocontract.methods.user_info().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
+      console.log(data);
+      
       instance.setState({
         is_admin: data[0],
         vote_status: data[1]
@@ -65,7 +67,7 @@ class App extends Component {
   fetchDAOInfo = async () => {
     const instance = this;
 
-    await this.state.daocontract.methods.dao_info().call().then(function(data) {
+    await this.state.daocontract.methods.dao_info().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
       instance.setState({
         expected_votes: data[0],
         votes: data[1],
@@ -83,9 +85,7 @@ class App extends Component {
     event.preventDefault();
 
     if (this.state.web3.utils.isAddress(this.state.address_input)) {
-      this.state.daocontract.methods.addVoter(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
-        console.log("ye");
-      });
+      this.state.daocontract.methods.addVoter(this.state.address_input).send({ from: this.state.web3.eth.defaultAccount });
     } else {
       alert("Invalid address given!");
     }
@@ -234,10 +234,8 @@ class App extends Component {
           } else if (this.state.vote_status == 1) {
             return (<>
               <button className="btn-primary" style={{marginRight: "10px"}} onClick={this.voteYes}>Vote Yes</button>
-              <button className="btn-danger"  onClick={this.voteNo}>Vote No</button>
+              <button className="btn-danger" onClick={this.voteNo}>Vote No</button>
             </>)
-          } else {
-            return (<h2 style={{color: "red"}}>Vote Failed</h2>)
           }
         })()}
 
