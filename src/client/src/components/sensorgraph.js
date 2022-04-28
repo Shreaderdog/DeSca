@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Chart as ChartJS,
-    CategoryScale,
     LinearScale,
     PointElement,
     LineElement,
@@ -9,10 +8,9 @@ import {
     Tooltip,
     Legend,
   } from 'chart.js';
-  import { Line } from 'react-chartjs-2';
+  import { Scatter } from 'react-chartjs-2';
 
   ChartJS.register(
-    CategoryScale,
     LinearScale,
     PointElement,
     LineElement,
@@ -25,6 +23,11 @@ import {
     let labelinfo = input.labelinfo;
     let datapoints = input.datapoints;
     const options = {
+        scales: {
+          y: {
+            beginAtZero: true,
+          },
+        },
         responsive: true,
         plugins: {
           legend: {
@@ -50,7 +53,7 @@ import {
         ]
     }
 
-    return <Line options={options} data={data} />;
+    return <Scatter options={options} data={data} />;
   }
 
   export default sensorgraph;

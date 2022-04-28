@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "./DESCATWO.sol";
 
-
 contract Dao is AccessControl {
     bytes32 public constant DAO_ROLE = keccak256("DAO_ROLE");
 
@@ -116,24 +115,11 @@ contract Dao is AccessControl {
         resetDAO();
     }
 
-    function print_status() public view returns (uint) {
-        return uint(voter_votes[msg.sender]);
+    function dao_info() public view returns (uint, uint, uint, uint) {
+        return (expected_voters, (num_yes + num_no), uint(decision), decision_timestamp);
     }
 
-    function print_decision() public view returns (uint) {
-        return 5;//uint(decision);
-    }
-
-    function print_time() public view returns(uint) {
-        return decision_timestamp;
-    }
-
-    function get_decision() public view returns (bool) {
-        if (decision == VoteResult.PASSED) {
-            return true;
-        }
-        else {
-            return false;
-        }
+    function user_info() public view returns (bool, uint) {
+        return (hasRole(DEFAULT_ADMIN_ROLE, msg.sender), uint(voter_votes[msg.sender]));
     }
 }
