@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import DeSCATWO from "./contracts/DeSCATWO.json";
 import Dao from "./contracts/Dao.json";
 import getWeb3 from "./components/getWeb3";
-import sensorgraph from "./components/sensorgraph";
+import Sensorgraph from "./components/sensorgraph";
 
 import "./App.css";
 
@@ -26,10 +26,10 @@ class App extends Component {
     last_decided: null,
     //desca info
     total_sensors: 0,
-    sensor_data: null,
+    sensor_data: [0, 0, 0, 0, 0, 0],
     last_result: false,
-    timer: null,
-    recd: null
+    timer: [0, 0, 0, 0, 0, 0],
+    recd: [false, false, false, false, false, false]
   };
 
   fetchUserInfo = async () => {
@@ -48,20 +48,20 @@ class App extends Component {
   fetchDESCAInfo = async () => {
     const instance = this;
 
-    // await this.state.descacontract.methods.descainfo().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
-    //   let label = Array.from({length: data[0]}, (_, i) => i + 1);
-    //   instance.setState({
-    //     total_sensors: data[0],
-    //     sensor_data: data[1],
-    //     last_result: data[2],
-    //     timer: data[3],
-    //     recd: data[4],
-    //     labelinfo: {
-    //       title: instance.state.labelinfo.title,
-    //       labels: label
-    //     }
-    //   });
-    // });
+    await this.state.descacontract.methods.descaInfo().call().then(function(data) {
+      let label = Array.from({length: data[0]}, (_, i) => i + 1);
+      instance.setState({
+        total_sensors: data[0],
+        sensor_data: data[1],
+        last_result: data[2],
+        timer: data[3],
+        recd: data[4],
+        labelinfo: {
+          title: instance.state.labelinfo.title,
+          labels: label
+        }
+      });
+    });
   }
 
   fetchDAOInfo = async () => {
@@ -86,6 +86,42 @@ class App extends Component {
 
     if (this.state.web3.utils.isAddress(this.state.address_input)) {
       this.state.daocontract.methods.addVoter(this.state.address_input).send({ from: this.state.web3.eth.defaultAccount });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
+
+  handledescaadminSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.daocontract.methods.addAdmin(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
+
+  handlenetadminSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.descacontract.methods.addSensor(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
+
+  handlenetsensorSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.descacontract.methods.reportData(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
     } else {
       alert("Invalid address given!");
     }
@@ -170,14 +206,14 @@ class App extends Component {
         <h1>DeSca Dapp DAO</h1>
         <p>Current address: {this.state.web3.eth.defaultAccount} {this.state.is_admin ? (<b>(admin)</b>) : ("")}</p>
         
-        {/* <h2 className="section">Aggragated Data Info</h2>
+        <h2 className="section">Aggragated Data Info</h2>
         <p>Total Sensors: {this.state.total_sensors}</p>
         <p>Last Result from Sensors: {this.state.last_result}</p>
         <h3>Sensor Status:</h3>
         <div className="dataVis"> 
-        {this.state.sensor_data.map((datapoint, i) => <span>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
+        {this.state.sensor_data.map((datapoint, i) => <span key={i}>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
         </div>
-        <sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/> */}
+        <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
 
 
         <h2 className="section">DAO Info</h2>
@@ -210,6 +246,18 @@ class App extends Component {
               <form onSubmit={this.handleSubmit}>
                 <input type="text" placeholder="Voter address" value={this.state.value} onChange={this.handleChange} />
                 <input type="submit" value="Add voter" />
+              </form>
+              <form onSubmit={this.handledescaadminSubmit}>
+                <input type="text" placeholder="NET_ADMIN_ADDRESS" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Add Net Admin" />
+              </form>
+              <form onSubmit={this.handlenetadminSubmit}>
+                <input type="text" placeholder="Sensor Address" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Add Sensor" />
+              </form>
+              <form onSubmit={this.handlesensorSubmit}>
+                <input type="text" placeholder="Sensor Value" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Send Sensor Data" />
               </form>
             </>
           ) : ("")
