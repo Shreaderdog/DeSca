@@ -36,8 +36,6 @@ class App extends Component {
     let instance = this;
 
     await this.state.daocontract.methods.user_info().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
-      console.log(data);
-      
       instance.setState({
         is_admin: data[0],
         vote_status: data[1]
@@ -95,7 +93,7 @@ class App extends Component {
     event.preventDefault();
 
     if (this.state.web3.utils.isAddress(this.state.address_input)) {
-      this.state.daocontract.methods.addAdmin(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+      this.state.daocontract.methods.addAdmin(this.state.address_input).send({ from: this.state.web3.eth.defaultAccount }).then(function(receipt) {
         console.log("ye");
       });
     } else {
@@ -107,9 +105,7 @@ class App extends Component {
     event.preventDefault();
 
     if (this.state.web3.utils.isAddress(this.state.address_input)) {
-      this.state.descacontract.methods.addSensor(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
-        console.log("ye");
-      });
+      this.state.descacontract.methods.addSensor(this.state.address_input).send({ from: this.state.web3.eth.defaultAccount });
     } else {
       alert("Invalid address given!");
     }
@@ -119,9 +115,7 @@ class App extends Component {
     event.preventDefault();
 
     if (this.state.web3.utils.isAddress(this.state.address_input)) {
-      this.state.descacontract.methods.reportData(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
-        console.log("ye");
-      });
+      this.state.descacontract.methods.reportData(this.state.address_input).send({ from: this.state.web3.eth.defaultAccount });
     } else {
       alert("Invalid address given!");
     }
@@ -196,6 +190,14 @@ class App extends Component {
     });
   }
 
+  refreshInfo = async(e) => {
+    e.preventDefault();
+
+    this.fetchDAOInfo();
+    this.fetchUserInfo();
+    this.fetchDESCAInfo();
+  }
+
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
@@ -205,17 +207,8 @@ class App extends Component {
       <div className="App">
         <h1>DeSca Dapp DAO</h1>
         <p>Current address: {this.state.web3.eth.defaultAccount} {this.state.is_admin ? (<b>(admin)</b>) : ("")}</p>
-        
-        <h2 className="section">Aggragated Data Info</h2>
-        <p>Total Sensors: {this.state.total_sensors}</p>
-        <p>Last Result from Sensors: {this.state.last_result}</p>
-        <h3>Sensor Status:</h3>
-        <div className="dataVis"> 
-        {this.state.sensor_data.map((datapoint, i) => <span key={i}>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
-        </div>
-        <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
-
-
+        <button className="btn-primary" style={{marginTop: "10px"}} onClick={this.refreshInfo}>Refresh</button>
+        <hr/>
         <h2 className="section">DAO Info</h2>
         {(() => {
           if (this.state.dao_status == 0) {
@@ -242,26 +235,40 @@ class App extends Component {
         {
           this.state.is_admin ? (
             <>
+              <hr/>
               <h3 className="section">Admin</h3>
               <form onSubmit={this.handleSubmit}>
                 <input type="text" placeholder="Voter address" value={this.state.value} onChange={this.handleChange} />
-                <input type="submit" value="Add voter" />
+                <input type="submit" className="btn-primary" value="Add voter" />
               </form>
               <form onSubmit={this.handledescaadminSubmit}>
                 <input type="text" placeholder="NET_ADMIN_ADDRESS" value={this.state.value} onChange={this.handleChange} />
-                <input type="submit" value="Add Net Admin" />
+                <input type="submit" className="btn-primary" value="Add Net Admin" />
               </form>
               <form onSubmit={this.handlenetadminSubmit}>
                 <input type="text" placeholder="Sensor Address" value={this.state.value} onChange={this.handleChange} />
-                <input type="submit" value="Add Sensor" />
+                <input type="submit" className="btn-primary" value="Add Sensor" />
               </form>
               <form onSubmit={this.handlesensorSubmit}>
                 <input type="text" placeholder="Sensor Value" value={this.state.value} onChange={this.handleChange} />
-                <input type="submit" value="Send Sensor Data" />
+                <input type="submit" className="btn-primary" value="Send Sensor Data" />
               </form>
             </>
           ) : ("")
         }
+        <hr/>
+        <h2 className="section">Aggragated Data Info</h2>
+        <p>Total Sensors: {this.state.total_sensors}</p>
+        <p>Last Result from Sensors: {this.state.last_result}</p>
+        <h3>Sensor Status</h3>
+        <div className="dataVis"> 
+          {this.state.sensor_data.map((datapoint, i) => <span key={i}>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
+        </div>
+        <div className="chart-area">
+          <div className="sensor-chart">
+            <Sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
+          </div>
+        </div>
       </div>
     );
   }
