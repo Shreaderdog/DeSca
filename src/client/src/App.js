@@ -35,7 +35,9 @@ class App extends Component {
   fetchUserInfo = async () => {
     let instance = this;
 
-    await this.state.daocontract.methods.user_info().call().then(function(data) {
+    await this.state.daocontract.methods.user_info().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
+      console.log(data);
+      
       instance.setState({
         is_admin: data[0],
         vote_status: data[1]
@@ -46,26 +48,26 @@ class App extends Component {
   fetchDESCAInfo = async () => {
     const instance = this;
 
-    await this.state.descacontract.methods.descainfo().call().then(function(data) {
-      let label = Array.from({length: data[0]}, (_, i) => i + 1);
-      instance.setState({
-        total_sensors: data[0],
-        sensor_data: data[1],
-        last_result: data[2],
-        timer: data[3],
-        recd: data[4],
-        labelinfo: {
-          title: instance.state.labelinfo.title,
-          labels: label
-        }
-      });
-    });
+    // await this.state.descacontract.methods.descainfo().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
+    //   let label = Array.from({length: data[0]}, (_, i) => i + 1);
+    //   instance.setState({
+    //     total_sensors: data[0],
+    //     sensor_data: data[1],
+    //     last_result: data[2],
+    //     timer: data[3],
+    //     recd: data[4],
+    //     labelinfo: {
+    //       title: instance.state.labelinfo.title,
+    //       labels: label
+    //     }
+    //   });
+    // });
   }
 
   fetchDAOInfo = async () => {
     const instance = this;
 
-    await this.state.daocontract.methods.dao_info().call().then(function(data) {
+    await this.state.daocontract.methods.dao_info().call({ from: this.state.web3.eth.defaultAccount }).then(function(data) {
       instance.setState({
         expected_votes: data[0],
         votes: data[1],
@@ -83,9 +85,7 @@ class App extends Component {
     event.preventDefault();
 
     if (this.state.web3.utils.isAddress(this.state.address_input)) {
-      this.state.daocontract.methods.addVoter(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
-        console.log("ye");
-      });
+      this.state.daocontract.methods.addVoter(this.state.address_input).send({ from: this.state.web3.eth.defaultAccount });
     } else {
       alert("Invalid address given!");
     }
@@ -170,14 +170,14 @@ class App extends Component {
         <h1>DeSca Dapp DAO</h1>
         <p>Current address: {this.state.web3.eth.defaultAccount} {this.state.is_admin ? (<b>(admin)</b>) : ("")}</p>
         
-        <h2 className="section">Aggragated Data Info</h2>
+        {/* <h2 className="section">Aggragated Data Info</h2>
         <p>Total Sensors: {this.state.total_sensors}</p>
         <p>Last Result from Sensors: {this.state.last_result}</p>
         <h3>Sensor Status:</h3>
         <div className="dataVis"> 
         {this.state.sensor_data.map((datapoint, i) => <span>Sensor #{i}: <br/> Sensor Value: {datapoint} <br/> Current Timeout Value: {this.state.timer[i]} <br/> Received This Cycle: {this.state.recd[i]}</span>)}
         </div>
-        <sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/>
+        <sensorgraph labelinfo={this.state.labelinfo} datapoints={this.state.sensor_data}/> */}
 
 
         <h2 className="section">DAO Info</h2>
@@ -198,10 +198,8 @@ class App extends Component {
           } else if (this.state.vote_status == 1) {
             return (<>
               <button className="btn-primary" style={{marginRight: "10px"}} onClick={this.voteYes}>Vote Yes</button>
-              <button className="btn-danger"  onClick={this.voteNo}>Vote No</button>
+              <button className="btn-danger" onClick={this.voteNo}>Vote No</button>
             </>)
-          } else {
-            return (<h2 style={{color: "red"}}>Vote Failed</h2>)
           }
         })()}
 
