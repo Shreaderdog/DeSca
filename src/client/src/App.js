@@ -91,6 +91,42 @@ class App extends Component {
     }
   }
 
+  handledescaadminSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.daocontract.methods.addAdmin(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
+
+  handlenetadminSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.descacontract.methods.addSensor(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
+
+  handlenetsensorSubmit = async (event) => {
+    event.preventDefault();
+
+    if (this.state.web3.utils.isAddress(this.state.address_input)) {
+      this.state.descacontract.methods.reportData(this.state.address_input).send({ from: this.state.accounts[0] }).then(function(receipt) {
+        console.log("ye");
+      });
+    } else {
+      alert("Invalid address given!");
+    }
+  }
+
   componentDidMount = async () => {
     try {
       // Get network provider and web3 instance.
@@ -212,6 +248,18 @@ class App extends Component {
               <form onSubmit={this.handleSubmit}>
                 <input type="text" placeholder="Voter address" value={this.state.value} onChange={this.handleChange} />
                 <input type="submit" value="Add voter" />
+              </form>
+              <form onSubmit={this.handledescaadminSubmit}>
+                <input type="text" placeholder="NET_ADMIN_ADDRESS" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Add Net Admin" />
+              </form>
+              <form onSubmit={this.handlenetadminSubmit}>
+                <input type="text" placeholder="Sensor Address" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Add Sensor" />
+              </form>
+              <form onSubmit={this.handlesensorSubmit}>
+                <input type="text" placeholder="Sensor Value" value={this.state.value} onChange={this.handleChange} />
+                <input type="submit" value="Send Sensor Data" />
               </form>
             </>
           ) : ("")
